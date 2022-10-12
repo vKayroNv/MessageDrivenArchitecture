@@ -60,5 +60,42 @@
                 }
             });
         }
+
+        public void UnbookTable(int id)
+        {
+            var table = _tables.FirstOrDefault(s => s.Id >= id && s.State == TableState.Booked);
+
+            Thread.Sleep(5000);
+
+            if (table != null)
+            {
+                table.SetTableState(TableState.Free);
+                Console.WriteLine($"Бронь столика {id} снята");
+            }
+            else
+            {
+                Console.WriteLine($"Столик {id} не был забронирован");
+            }
+        }
+
+        public void UnbookTableAsync(int id)
+        {
+            Task.Factory.StartNew(async () =>
+            {
+                var table = _tables.FirstOrDefault(s => s.Id >= id && s.State == TableState.Booked);
+
+                await Task.Delay(5000);
+
+                if (table != null)
+                {
+                    table.SetTableState(TableState.Free);
+                    Console.WriteLine($"Бронь столика {id} снята");
+                }
+                else
+                {
+                    Console.WriteLine($"Столик {id} не был забронирован");
+                }
+            });
+        }
     }
 }
