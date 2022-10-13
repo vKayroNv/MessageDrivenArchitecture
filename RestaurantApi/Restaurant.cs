@@ -27,46 +27,83 @@ namespace RestaurantApi
 
         public void CreateBookRequest(BookingRequest request)
         {
+            if (request.Type == BookingType.Async) 
+                Console.WriteLine("Ожидайте уведомления, сейчас подберем вам стол");
+            else
+                Console.WriteLine("Подождите на линии, сейчас подберем вам стол");
+
             _requests.Enqueue(request);
         }
 
-        private void BookTable(int countOfPerson)
+        private void BookTableBase(bool isAsync, byte countOfPerson)
         {
-            Console.WriteLine("Подождите на линии, сейчас подберем вам стол");
-
             var table = _tables.FirstOrDefault(s => s.SeatsCount >= countOfPerson && s.State == TableState.Free);
 
-            Thread.Sleep(5000);
+            if (!isAsync)
+                Thread.Sleep(5000);
 
             if (table != null)
             {
                 table.SetTableState(TableState.Booked);
-                Console.WriteLine($"Готово! Ваш столик номер {table.Id}");
+
+                if (isAsync)
+                    _notification.SendAsync($"Готово! Ваш столик номер {table.Id}");
+                else
+                    Console.WriteLine($"Готово! Ваш столик номер {table.Id}");
             }
             else
             {
-                Console.WriteLine("К сожалению все столики заняты");
+                var tables = _tables
+                    .Where(s => s.State == TableState.Free)
+                    .ToList();
+
+                if (tables.Any())
+                {
+                    tables.Sort((a, b) => b.SeatsCount.CompareTo(a.SeatsCount));
+
+                    byte seatsCount = 0;
+                    List<int> tableIds = new();
+
+                    foreach (var _table in tables)
+                    {
+                        seatsCount += _table.SeatsCount;
+                        tableIds.Add(_table.Id);
+
+                        if (seatsCount >= countOfPerson)
+                        {
+                            break;
+                        }
+                    }
+
+                    if (seatsCount >= countOfPerson)
+                    {
+                        foreach (var id in tableIds)
+                            _tables.First(s => s.Id == id).SetTableState(TableState.Booked);
+
+                        if (isAsync)
+                            _notification.SendAsync($"Готово! Номера ваших столиков: {string.Join(", ", tableIds)}");
+                        else
+                            Console.WriteLine($"Готово! Номера ваших столиков: {string.Join(", ", tableIds)}");
+                    }
+                    else
+                    {
+                        if (isAsync)
+                            _notification.SendAsync("К сожалению все столики заняты");
+                        else
+                            Console.WriteLine("К сожалению все столики заняты");
+                    }
+                }
             }
         }
 
-        private void BookTableAsync(int countOfPerson)
+        private void BookTable(byte countOfPerson)
         {
-            Console.WriteLine("Ожидайте уведомления, сейчас подберем вам стол");
+            BookTableBase(false, countOfPerson);
+        }
 
-            Task.Factory.StartNew(() =>
-            {
-                var table = _tables.FirstOrDefault(s => s.SeatsCount >= countOfPerson && s.State == TableState.Free);
-
-                if (table != null)
-                {
-                    table.SetTableState(TableState.Booked);
-                    _notification.SendAsync($"Готово! Ваш столик номер {table.Id}");
-                }
-                else
-                {
-                    _notification.SendAsync("К сожалению все столики заняты");
-                }
-            });
+        private void BookTableAsync(byte countOfPerson)
+        {
+            BookTableBase(true, countOfPerson);
         }
 
         private void UnbookTable(int id)

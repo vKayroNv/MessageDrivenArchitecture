@@ -28,8 +28,6 @@ namespace RestaurantApi
                     continue;
                 }
 
-                var stopwatch = Stopwatch.StartNew();
-
                 switch (result)
                 {
                     case 1:
@@ -39,9 +37,6 @@ namespace RestaurantApi
                         restaurant.CreateBookRequest(new() { CountOfPerson = count, Type = BookingType.Async });
                         break;
                 }
-
-                stopwatch.Stop();
-                Console.WriteLine($"Затрачено времени: {stopwatch.ElapsedMilliseconds} мс");
             }
         }
     }
