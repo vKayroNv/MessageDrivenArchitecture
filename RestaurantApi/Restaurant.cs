@@ -16,6 +16,8 @@
             {
                 _tables.Add(new(i));
             }
+
+            UnbookRandomly();
         }
 
         public void BookTable(int countOfPerson)
@@ -47,6 +49,7 @@
 
                 if (table != null)
                 {
+                    table.SetTableState(TableState.Booked);
                     _notification.SendAsync($"Готово! Ваш столик номер {table.Id}");
                 }
                 else
@@ -87,6 +90,28 @@
                 else
                 {
                     _notification.SendAsync($"Столик {id} не был забронирован");
+                }
+            });
+        }
+
+        private void UnbookRandomly()
+        {
+            Task.Factory.StartNew(async () =>
+            {
+                while (true)
+                {
+                    await Task.Delay(1000 * Random.Shared.Next(20, 31));
+
+                    var tables = _tables.Where(s => s.State == TableState.Booked);
+
+                    if (tables.Any())
+                    {
+                        var table = tables.ElementAt(Random.Shared.Next(tables.Count()));
+
+                        table.SetTableState(TableState.Free);
+
+                        _notification.SendAsync($"Бронь столика {table.Id} снята");
+                    }
                 }
             });
         }
