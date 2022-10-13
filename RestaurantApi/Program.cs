@@ -6,7 +6,8 @@ namespace RestaurantApi
     {
         static void Main(string[] args)
         {
-            Restaurant restaurant = new();
+            INotification notification = new Notification();
+            Restaurant restaurant = new(notification);
 
             while (true)
             {

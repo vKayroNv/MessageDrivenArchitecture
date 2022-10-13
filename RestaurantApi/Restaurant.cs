@@ -4,10 +4,14 @@
     {
         private const int TABLESCOUNT = 20;
 
+        private readonly INotification _notification;
+
         private readonly List<Table> _tables = new();
 
-        public Restaurant()
+        public Restaurant(INotification notification)
         {
+            _notification = notification;
+
             for (int i = 1; i <= TABLESCOUNT; i++)
             {
                 _tables.Add(new(i));
@@ -37,26 +41,17 @@
         {
             Console.WriteLine("Ожидайте уведомления, сейчас подберем вам стол");
 
-            Task.Factory.StartNew(async () =>
+            Task.Factory.StartNew(() =>
             {
                 var table = _tables.FirstOrDefault(s => s.SeatsCount >= countOfPerson && s.State == TableState.Free);
 
-                await Task.Delay(5000);
-
                 if (table != null)
                 {
-                    table.SetTableState(TableState.Booked);
-                    Console.ForegroundColor = ConsoleColor.Green;
-                    Console.Write("УВЕДОМЛЕНИЕ ");
-                    Console.ForegroundColor = ConsoleColor.Gray;
-                    Console.WriteLine($"Готово! Ваш столик номер {table.Id}");
+                    _notification.SendAsync($"Готово! Ваш столик номер {table.Id}");
                 }
                 else
                 {
-                    Console.ForegroundColor = ConsoleColor.Green;
-                    Console.Write("УВЕДОМЛЕНИЕ ");
-                    Console.ForegroundColor = ConsoleColor.Gray;
-                    Console.WriteLine("К сожалению все столики заняты");
+                    _notification.SendAsync("К сожалению все столики заняты");
                 }
             });
         }
@@ -80,20 +75,18 @@
 
         public void UnbookTableAsync(int id)
         {
-            Task.Factory.StartNew(async () =>
+            Task.Factory.StartNew(() =>
             {
                 var table = _tables.FirstOrDefault(s => s.Id >= id && s.State == TableState.Booked);
-
-                await Task.Delay(5000);
 
                 if (table != null)
                 {
                     table.SetTableState(TableState.Free);
-                    Console.WriteLine($"Бронь столика {id} снята");
+                    _notification.SendAsync($"Бронь столика {id} снята");
                 }
                 else
                 {
-                    Console.WriteLine($"Столик {id} не был забронирован");
+                    _notification.SendAsync($"Столик {id} не был забронирован");
                 }
             });
         }
