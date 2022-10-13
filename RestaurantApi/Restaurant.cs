@@ -1,4 +1,6 @@
-﻿namespace RestaurantApi
+﻿using System.Collections.Concurrent;
+
+namespace RestaurantApi
 {
     public class Restaurant
     {
@@ -7,6 +9,8 @@
         private readonly INotification _notification;
 
         private readonly List<Table> _tables = new();
+
+        private readonly ConcurrentQueue<BookingRequest> _requests = new();
 
         public Restaurant(INotification notification)
         {
@@ -18,9 +22,15 @@
             }
 
             UnbookRandomly();
+            ProcessRequests();
         }
 
-        public void BookTable(int countOfPerson)
+        public void CreateBookRequest(BookingRequest request)
+        {
+            _requests.Enqueue(request);
+        }
+
+        private void BookTable(int countOfPerson)
         {
             Console.WriteLine("Подождите на линии, сейчас подберем вам стол");
 
@@ -39,7 +49,7 @@
             }
         }
 
-        public void BookTableAsync(int countOfPerson)
+        private void BookTableAsync(int countOfPerson)
         {
             Console.WriteLine("Ожидайте уведомления, сейчас подберем вам стол");
 
@@ -59,7 +69,7 @@
             });
         }
 
-        public void UnbookTable(int id)
+        private void UnbookTable(int id)
         {
             var table = _tables.FirstOrDefault(s => s.Id >= id && s.State == TableState.Booked);
 
@@ -76,7 +86,7 @@
             }
         }
 
-        public void UnbookTableAsync(int id)
+        private void UnbookTableAsync(int id)
         {
             Task.Factory.StartNew(() =>
             {
@@ -107,10 +117,36 @@
                     if (tables.Any())
                     {
                         var table = tables.ElementAt(Random.Shared.Next(tables.Count()));
+                        UnbookTableAsync(table.Id);
+                    }
+                }
+            });
+        }
 
-                        table.SetTableState(TableState.Free);
+        private void ProcessRequests()
+        {
+            Task.Factory.StartNew(async () =>
+            {
+                while (true)
+                {
+                    await Task.Delay(1000);
 
-                        _notification.SendAsync($"Бронь столика {table.Id} снята");
+                    while (!_requests.IsEmpty)
+                    {
+                        if (_requests.TryDequeue(out var request))
+                        {
+                            switch (request.Type)
+                            {
+                                case BookingType.Sync:
+                                    BookTable(request.CountOfPerson);
+                                    break;
+                                case BookingType.Async:
+                                    BookTableAsync(request.CountOfPerson);
+                                    break;
+                            }
+                        }
+
+                        await Task.Delay(100);
                     }
                 }
             });

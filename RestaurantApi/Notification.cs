@@ -2,6 +2,8 @@
 {
     public class Notification : INotification
     {
+        private object _locker = new();
+
         public Notification()
         {
 
@@ -13,10 +15,13 @@
             {
                 await Task.Delay(5000);
 
-                Console.ForegroundColor = ConsoleColor.Green;
-                Console.Write("УВЕДОМЛЕНИЕ ");
-                Console.ForegroundColor = ConsoleColor.Gray;
-                Console.WriteLine(text);
+                lock (_locker)
+                {
+                    Console.ForegroundColor = ConsoleColor.Green;
+                    Console.Write("УВЕДОМЛЕНИЕ ");
+                    Console.ResetColor();
+                    Console.WriteLine(text);
+                }
             });
         }
     }
