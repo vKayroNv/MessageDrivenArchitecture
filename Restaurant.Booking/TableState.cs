@@ -1,4 +1,4 @@
-﻿namespace RestaurantApi
+﻿namespace Restaurant.Booking
 {
     public enum TableState
     {

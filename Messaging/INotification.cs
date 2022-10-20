@@ -1,4 +1,4 @@
-﻿namespace RestaurantApi
+﻿namespace Messaging
 {
     public interface INotification
     {
