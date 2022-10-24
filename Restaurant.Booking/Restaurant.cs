@@ -1,15 +1,14 @@
-﻿using System.Collections.Concurrent;
+﻿using Messaging;
+using System.Collections.Concurrent;
 
-namespace RestaurantApi
+namespace Restaurant.Booking
 {
     public class Restaurant
     {
         private const int TABLESCOUNT = 20;
 
         private readonly INotification _notification;
-
         private readonly List<Table> _tables = new();
-
         private readonly ConcurrentQueue<BookingRequest> _requests = new();
 
         public Restaurant(INotification notification)
@@ -27,10 +26,14 @@ namespace RestaurantApi
 
         public void CreateBookRequest(BookingRequest request)
         {
-            if (request.Type == BookingType.Async) 
+            if (request.Type == BookingType.Async)
+            {
                 Console.WriteLine("Ожидайте уведомления, сейчас подберем вам стол");
+            }
             else
+            {
                 Console.WriteLine("Подождите на линии, сейчас подберем вам стол");
+            }
 
             _requests.Enqueue(request);
         }
@@ -40,16 +43,22 @@ namespace RestaurantApi
             var table = _tables.FirstOrDefault(s => s.SeatsCount >= countOfPerson && s.State == TableState.Free);
 
             if (!isAsync)
+            {
                 Thread.Sleep(5000);
+            }
 
             if (table != null)
             {
                 table.SetTableState(TableState.Booked);
 
                 if (isAsync)
+                {
                     _notification.SendAsync($"Готово! Ваш столик номер {table.Id}");
+                }
                 else
+                {
                     Console.WriteLine($"Готово! Ваш столик номер {table.Id}");
+                }
             }
             else
             {
@@ -78,19 +87,29 @@ namespace RestaurantApi
                     if (seatsCount >= countOfPerson)
                     {
                         foreach (var id in tableIds)
+                        {
                             _tables.First(s => s.Id == id).SetTableState(TableState.Booked);
+                        }
 
                         if (isAsync)
+                        {
                             _notification.SendAsync($"Готово! Номера ваших столиков: {string.Join(", ", tableIds)}");
+                        }
                         else
+                        {
                             Console.WriteLine($"Готово! Номера ваших столиков: {string.Join(", ", tableIds)}");
+                        }
                     }
                     else
                     {
                         if (isAsync)
+                        {
                             _notification.SendAsync("К сожалению все столики заняты");
+                        }
                         else
+                        {
                             Console.WriteLine("К сожалению все столики заняты");
+                        }
                     }
                 }
             }

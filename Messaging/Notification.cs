@@ -1,8 +1,8 @@
-﻿namespace RestaurantApi
+﻿namespace Messaging
 {
     public class Notification : INotification
     {
-        private object _locker = new();
+        private readonly object _locker = new();
 
         public Notification()
         {

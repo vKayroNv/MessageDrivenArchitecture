@@ -1,12 +1,21 @@
-﻿using System.Diagnostics;
+﻿using Messaging;
+using Messaging.RabbitMQ;
+using Microsoft.Extensions.Configuration;
 
-namespace RestaurantApi
+namespace Restaurant.Booking
 {
     internal class Program
     {
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
-            INotification notification = new Notification();
+            var builder = new ConfigurationBuilder().AddUserSecrets<Program>();
+            var config = builder.Build();
+
+            // dotnet user-secrets set "ConnectionString" "HostName=<hostname>;Port=<port>;UserName=<username>;Password=<password>"
+            ConnectionOptions options = new() { ConnectionString = config["ConnectionString"] };
+
+            INotification notification = new Producer("BookingNotification", options);
+
             Restaurant restaurant = new(notification);
 
             while (true)
