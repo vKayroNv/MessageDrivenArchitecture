@@ -2,32 +2,31 @@
 {
     public class Table
     {
-        public const byte MAXSEATSCOUNT = 5;
+        private readonly object _lock = new();
 
-        private readonly int _id;
-        private readonly byte _seatsCount;
-        private TableState _state;
-
-        public int Id { get => _id; }
-        public byte SeatsCount { get => _seatsCount; }
-        public TableState State { get => _state; }
+        public TableState State { get; private set; }
+        public int SeatsCount { get; }
+        public int Id { get; }
 
         public Table(int id)
         {
-            _id = id;
-            _seatsCount = (byte)Random.Shared.Next(2, MAXSEATSCOUNT);
-            _state = TableState.Free;
+            Id = id;
+            State = TableState.Free;
+            SeatsCount = Random.Shared.Next(2, 5);
         }
 
-        public bool SetTableState(TableState state)
+        public bool SetState(TableState state)
         {
-            if (_state == state)
+            lock (_lock)
             {
-                return false;
-            }
+                if (state == State)
+                {
+                    return false;
+                }
 
-            _state = state;
-            return true;
+                State = state;
+                return true;
+            }
         }
     }
 }
