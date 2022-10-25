@@ -1,4 +1,6 @@
-﻿namespace Messaging
+﻿using Microsoft.Extensions.Configuration;
+
+namespace Messaging
 {
     public class ConnectionOptions
     {
@@ -7,38 +9,35 @@
         public string UserName { get; private set; } = string.Empty;
         public string Password { get; private set; } = string.Empty;
 
-        public string ConnectionString
+        public ConnectionOptions(IConfiguration configuration)
         {
-            set
+            var data = configuration["ConnectionString"].Split(';');
+            foreach (var item in data)
             {
-                var data = value.Split(';');
-                foreach (var item in data)
+                var pair = item.Split('=');
+                if (pair.Length != 2)
                 {
-                    var pair = item.Split('=');
-                    if (pair.Length != 2)
-                    {
-                        continue;
-                    }
+                    continue;
+                }
 
-                    if (pair[0] == "HostName")
+                if (pair[0] == "HostName")
+                {
+                    HostName = pair[1];
+                }
+                if (pair[0] == "Port")
+                {
+                    if (ushort.TryParse(pair[1], out var port))
                     {
-                        HostName = pair[1];
+                        Port = port;
                     }
-                    if (pair[0] == "Port")
-                    {
-                        if (ushort.TryParse(pair[1], out var port))
-                        {
-                            Port = port;
-                        }
-                    }
-                    if (pair[0] == "UserName")
-                    {
-                        UserName = pair[1];
-                    }
-                    if (pair[0] == "Password")
-                    {
-                        Password = pair[1];
-                    }
+                }
+                if (pair[0] == "UserName")
+                {
+                    UserName = pair[1];
+                }
+                if (pair[0] == "Password")
+                {
+                    Password = pair[1];
                 }
             }
         }
